@@ -1,206 +1,247 @@
-from academic_error import AcademicError
+import sys
 from record_system import RecordSystem
-from json_manager import save_data, load_data, auto_save, export_transcript
+from academic_error import AcademicError
 
 
-def show_menu():
-    menu_items = [
-        "1. Add Student",
-        "2. Edit Student",
-        "3. Delete Student",
-        "4. Add Course",
-        "5. Edit Course",
-        "6. Delete Course",
-        "7. Enroll Student",
-        "8. Record Grade",
-        "9. Show Transcript",
-        "10. Show Ranking",
-        "11. Show Analytics",
-        "12. Search",
-        "13. Save",
-        "14. Load",
-        "15. Export Transcript to TXT",
-        "0. Exit"
-    ]
-
-    print("\n===== Student Record System =====")
-    for item in menu_items:
-        print(item)
+def print_menu():
+    print("\n" + "=" * 60)
+    print("STUDENT RECORD SYSTEM")
+    print("=" * 60)
+    print("1. Add Student")
+    print("2. Add Course")
+    print("3. Enroll Student in Course")
+    print("4. Record Grade")
+    print("5. View Transcript")
+    print("6. View Class Ranking")
+    print("7. View Academic Analytics Report")
+    print("8. Search Students")
+    print("9. Search Courses")
+    print("10. Delete Student")
+    print("11. Delete Course")
+    print("12. List All Students")
+    print("13. List All Courses")
+    print("14. Save Data")
+    print("15. Load Data")
+    print("0. Exit")
+    print("-" * 60)
 
 
-def add_student_action(system):
-    name = input("Name: ").strip()
-    sid = input("Student ID: ").strip()
-    major = input("Major: ").strip()
-    year = int(input("Year: "))
-
-    system.add_student(name, sid, major, year)
-    auto_save(system)
-    print("Student added.")
-
-
-def edit_student_action(system):
-    sid = input("Student ID to edit: ").strip()
-    name = input("New name: ").strip()
-    major = input("New major: ").strip()
-    year = int(input("New year: "))
-
-    system.edit_student(sid, name, major, year)
-    auto_save(system)
-    print("Student edited.")
+def add_student(system):
+    print("\n--- ADD NEW STUDENT ---")
+    try:
+        name = input("Enter student name: ").strip().title()
+        student_id = input("Enter student ID: ").strip()
+        major = input("Enter major: ").strip().title()
+        year = input("Enter year (Freshman/Sophomore/Junior/Senior): ").strip().capitalize()
+        system.add_student(name, student_id, major, year)
+    except AcademicError as e:
+        print(f"Error: {e}")
 
 
-def delete_student_action(system):
-    sid = input("Student ID to delete: ").strip()
-
-    system.delete_student(sid)
-    auto_save(system)
-    print("Student deleted.")
-
-
-def add_course_action(system):
-    code = input("Course code: ").strip()
-    name = input("Course name: ").strip()
-    credits = int(input("Credits: "))
-    capacity = int(input("Capacity: "))
-
-    system.add_course(code, name, credits, capacity)
-    auto_save(system)
-    print("Course added.")
+def add_course(system):
+    print("\n--- ADD NEW COURSE ---")
+    try:
+        code = input("Enter course code: ").strip().upper()
+        name = input("Enter course name: ").strip().title()
+        credits = int(input("Enter credits (1-6): "))
+        capacity = int(input("Enter maximum capacity: "))
+        system.add_course(code, name, credits, capacity)
+    except AcademicError as e:
+        print(f"Error: {e}")
+    except ValueError:
+        print("Error: Credits and capacity must be numbers")
 
 
-def edit_course_action(system):
-    code = input("Course code to edit: ").strip()
-    name = input("New course name: ").strip()
-    credits = int(input("New credits: "))
-    capacity = int(input("New capacity: "))
-
-    system.edit_course(code, name, credits, capacity)
-    auto_save(system)
-    print("Course edited.")
-
-
-def delete_course_action(system):
-    code = input("Course code to delete: ").strip()
-
-    system.delete_course(code)
-    auto_save(system)
-    print("Course deleted.")
+def enroll_student(system):
+    print("\n--- ENROLL STUDENT IN COURSE ---")
+    try:
+        student_id = input("Enter student ID: ").strip()
+        course_code = input("Enter course code: ").strip().upper()
+        system.enroll_student(student_id, course_code)
+    except AcademicError as e:
+        print(f"Error: {e}")
 
 
-def enroll_student_action(system):
-    sid = input("Student ID: ").strip()
-    code = input("Course code: ").strip()
-
-    system.enroll(sid, code)
-    auto_save(system)
-    print("Student enrolled.")
-
-
-def record_grade_action(system):
-    sid = input("Student ID: ").strip()
-    code = input("Course code: ").strip()
-    grade = input("Grade A+/A/B+/B/C+/C/D/F: ").strip()
-
-    system.record_grade(sid, code, grade)
-    auto_save(system)
-    print("Grade recorded.")
+def record_grade(system):
+    print("\n--- RECORD GRADE ---")
+    try:
+        student_id = input("Enter student ID: ").strip()
+        course_code = input("Enter course code: ").strip().upper()
+        print("Valid grades: A+, A, B+, B, C+, C, D, F")
+        grade = input("Enter grade: ").strip().upper()
+        system.record_grade(student_id, course_code, grade)
+    except AcademicError as e:
+        print(f"Error: {e}")
 
 
-def show_transcript_action(system):
-    sid = input("Student ID: ").strip()
+def view_transcript(system):
+    print("\n--- VIEW TRANSCRIPT ---")
+    try:
+        student_id = input("Enter student ID: ").strip()
+        student = system.get_student_by_id(student_id)
+        if not student:
+            print("Student not found.")
+            return
+        print(student.transcript(system.courses))
+    except Exception as e:
+        print(f"Error: {e}")
 
-    if sid not in system.students:
-        print("Student not found.")
-        return
 
-    print(system.students[sid].transcript(system.courses))
-
-
-def show_ranking_action(system):
+def view_ranking(system):
+    print("\n--- CLASS RANKING ---")
     ranking = system.calculate_ranking()
-
-    print("\n===== Ranking =====")
-
     if not ranking:
-        print("No graded students yet.")
+        print("No students with completed courses yet.")
         return
-
-    for rank, student_info in enumerate(ranking, start=1):
-        print(f"{rank}. {student_info}")
-
-
-def show_analytics_action(system):
-    analytics = system.analytics()
-
-    print("\n===== Analytics =====")
-    print(analytics)
+    print("\n" + "-" * 50)
+    print(f"{'Rank':<6} {'Name':<20} {'ID':<12} {'GPA':<6}")
+    print("-" * 50)
+    for i, (student, gpa) in enumerate(ranking, 1):
+        print(f"{i:<6} {student.name:<20} {student.sid:<12} {gpa:<6.2f}")
+    print("-" * 50)
 
 
-def search_action(system):
-    keyword = input("Search keyword: ").strip()
-    results = system.find(keyword)
+def view_analytics(system):
+    system.print_analytics_report()
 
-    print("\n===== Search Results =====")
 
-    if not results:
-        print("No results found.")
+def search_students(system):
+    print("\n--- SEARCH STUDENTS ---")
+    print("Search by: 1. Name  2. ID  3. Major")
+    try:
+        choice = input("Enter choice: ").strip()
+        search_map = {'1': 'name', '2': 'id', '3': 'major'}
+        if choice not in search_map:
+            print("Invalid choice")
+            return
+        keyword = input("Enter keyword: ").strip()
+        results = system.search_students(keyword, search_map[choice])
+        if not results:
+            print("No students found.")
+            return
+        print(f"\nFound {len(results)} student(s):")
+        for student in results:
+            print(f"  {student.name} (ID: {student.sid}) - {student.major}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+def search_courses(system):
+    print("\n--- SEARCH COURSES ---")
+    print("Search by: 1. Name  2. Code")
+    try:
+        choice = input("Enter choice: ").strip()
+        search_map = {'1': 'name', '2': 'code'}
+        if choice not in search_map:
+            print("Invalid choice")
+            return
+        keyword = input("Enter keyword: ").strip()
+        results = system.search_courses(keyword, search_map[choice])
+        if not results:
+            print("No courses found.")
+            return
+        print(f"\nFound {len(results)} course(s):")
+        for course in results:
+            print(f"  {course.code}: {course.name} ({course.credits} credits)")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+def delete_student(system):
+    print("\n--- DELETE STUDENT ---")
+    try:
+        student_id = input("Enter student ID to delete: ").strip()
+        confirm = input(f"Delete student {student_id}? (y/n): ").strip().lower()
+        if confirm == 'y':
+            system.delete_student(student_id)
+    except AcademicError as e:
+        print(f"Error: {e}")
+
+
+def delete_course(system):
+    print("\n--- DELETE COURSE ---")
+    try:
+        course_code = input("Enter course code to delete: ").strip().upper()
+        confirm = input(f"Delete course {course_code}? (y/n): ").strip().lower()
+        if confirm == 'y':
+            system.delete_course(course_code)
+    except AcademicError as e:
+        print(f"Error: {e}")
+
+
+def list_all_students(system):
+    print("\n--- ALL STUDENTS ---")
+    if not system.students:
+        print("No students in the system.")
         return
+    print("-" * 60)
+    print(f"{'ID':<12} {'Name':<20} {'Major':<15} {'Year':<10}")
+    print("-" * 60)
+    for student in system.students.values():
+        print(f"{student.sid:<12} {student.name:<20} {student.major:<15} {student.year:<10}")
+    print("-" * 60)
+    print(f"Total: {len(system.students)} students")
 
-    for result in results:
-        print(result)
+
+def list_all_courses(system):
+    print("\n--- ALL COURSES ---")
+    if not system.courses:
+        print("No courses in the system.")
+        return
+    print("-" * 60)
+    print(f"{'Code':<10} {'Name':<25} {'Credits':<8} {'Seats':<10}")
+    print("-" * 60)
+    for course in system.courses.values():
+        available = course.capacity - len(course.enrolled_students)
+        print(f"{course.code:<10} {course.name:<25} {course.credits:<8} {available}/{course.capacity}")
+    print("-" * 60)
+    print(f"Total: {len(system.courses)} courses")
+
+
+def save_data(system):
+    try:
+        system.save()
+    except Exception as e:
+        print(f"Error saving data: {e}")
+
+
+def load_data(system):
+    try:
+        system.load()
+    except Exception as e:
+        print(f"Error loading data: {e}")
 
 
 def main():
-    system = RecordSystem()
-    load_data(system)
-
-    actions = {
-        "1": add_student_action,
-        "2": edit_student_action,
-        "3": delete_student_action,
-        "4": add_course_action,
-        "5": edit_course_action,
-        "6": delete_course_action,
-        "7": enroll_student_action,
-        "8": record_grade_action,
-        "9": show_transcript_action,
-        "10": show_ranking_action,
-        "11": show_analytics_action,
-        "12": search_action,
-        "15": export_transcript,
+    try:
+        system = RecordSystem()
+    except Exception as e:
+        print(f"Error: {e}")
+        system = RecordSystem()
+    
+    print("\nWelcome to the Student Record System!")
+    
+    menu_actions = {
+        '1': add_student, '2': add_course, '3': enroll_student,
+        '4': record_grade, '5': view_transcript, '6': view_ranking,
+        '7': view_analytics, '8': search_students, '9': search_courses,
+        '10': delete_student, '11': delete_course, '12': list_all_students,
+        '13': list_all_courses, '14': save_data, '15': load_data,
     }
-
+    
     while True:
-        show_menu()
-        choice = input("Choose option: ").strip()
-
-        try:
-            if choice in actions:
-                actions[choice](system)
-
-            elif choice == "13":
-                save_data(system)
-
-            elif choice == "14":
-                load_data(system)
-
-            elif choice == "0":
-                save_data(system)
-                print("Goodbye.")
-                break
-
-            else:
-                print("Invalid option. Try again.")
-
-        except AcademicError as error:
-            print(f"Academic Error: {error}")
-
-        except ValueError:
-            print("Input Error: Please enter a valid number.")
-
-        except Exception as error:
-            print(f"Unexpected Error: {error}")
+        print_menu()
+        choice = input("\nEnter your choice: ").strip()
+        
+        if choice == '0':
+            print("\nGoodbye!")
+            system.save()
+            sys.exit(0)
+        
+        if choice in menu_actions:
+            menu_actions[choice](system)
+        else:
+            print("Invalid choice. Try again.")
 
 
 if __name__ == "__main__":
