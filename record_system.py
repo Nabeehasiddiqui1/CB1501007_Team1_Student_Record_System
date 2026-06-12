@@ -264,7 +264,157 @@ class RecordSystem:
         if len(major) < 2:
             raise AcademicError("Major must be at least 2 characters")
         return True
+        # ============================================================
+    # CRUD METHODS FOR STUDENTS AND COURSES (Member 3)
+    # ============================================================
     
+    def add_student(self, name: str, student_id: str, major: str, year: str) -> None:
+        """
+        Add a new student to the system.
+        """
+        from student import Student
+        from academic_error import AcademicError
+        
+        # Validate inputs
+        self.validate_major(major)
+        self.validate_year(year)
+        
+        # Check for duplicate ID
+        if student_id in self.students:
+            raise AcademicError(f"Student with ID {student_id} already exists")
+        
+        # Create and add student
+        student = Student(name, student_id, major, year)
+        self.students[student_id] = student
+        self.save()
+        print(f"Student {name} added successfully")
+    
+    def edit_student(self, student_id: str, name: str = None, major: str = None, year: str = None) -> None:
+        """
+        Edit an existing student's information.
+        """
+        from academic_error import AcademicError
+        
+        if student_id not in self.students:
+            raise AcademicError(f"Student with ID {student_id} not found")
+        
+        student = self.students[student_id]
+        
+        if name:
+            student.name = name
+        if major:
+            self.validate_major(major)
+            student.major = major
+        if year:
+            self.validate_year(year)
+            student.year = year
+        
+        self.save()
+        print(f"Student {student_id} updated successfully")
+    
+    def delete_student(self, student_id: str) -> None:
+        """
+        Delete a student from the system and remove from all course rosters.
+        """
+        from academic_error import AcademicError
+        
+        if student_id not in self.students:
+            raise AcademicError(f"Student with ID {student_id} not found")
+        
+        # Remove student from all course rosters
+        for course in self.courses.values():
+            course.remove(student_id)
+        
+        # Delete student
+        del self.students[student_id]
+        self.save()
+        print(f"Student {student_id} deleted successfully")
+    
+    def add_course(self, code: str, name: str, credits: int, capacity: int) -> None:
+        """
+        Add a new course to the system.
+        """
+        from course import Course
+        from academic_error import AcademicError
+        
+        # Validate credits
+        if credits < 1 or credits > 6:
+            raise AcademicError("Credits must be between 1 and 6")
+        
+        # Validate capacity
+        if capacity < 1:
+            raise AcademicError("Capacity must be at least 1")
+        
+        # Check for duplicate code
+        if code in self.courses:
+            raise AcademicError(f"Course with code {code} already exists")
+        
+        # Create and add course
+        course = Course(code, name, credits, capacity)
+        self.courses[code] = course
+        self.save()
+        print(f"Course {name} added successfully")
+    
+    def edit_course(self, code: str, name: str = None, credits: int = None, capacity: int = None) -> None:
+        """
+        Edit an existing course's information.
+        """
+        from academic_error import AcademicError
+        
+        if code not in self.courses:
+            raise AcademicError(f"Course with code {code} not found")
+        
+        course = self.courses[code]
+        
+        if name:
+            course.name = name
+        if credits:
+            if credits < 1 or credits > 6:
+                raise AcademicError("Credits must be between 1 and 6")
+            course.credits = credits
+        if capacity:
+            if capacity < 1:
+                raise AcademicError("Capacity must be at least 1")
+            course.capacity = capacity
+        
+        self.save()
+        print(f"Course {code} updated successfully")
+    
+    def delete_course(self, code: str) -> None:
+        """
+        Delete a course from the system and remove from all student enrollments.
+        """
+        from academic_error import AcademicError
+        
+        if code not in self.courses:
+            raise AcademicError(f"Course with code {code} not found")
+        
+        # Remove course from all student enrollments
+        for student in self.students.values():
+            if code in student.enrollments:
+                del student.enrollments[code]
+        
+        # Delete course
+        del self.courses[code]
+        self.save()
+        print(f"Course {code} deleted successfully")
+    
+    def search_students(self, keyword: str, search_by: str = 'name') -> list:
+        """
+        Search for students by name, ID, or major (case-insensitive).
+        """
+        keyword_lower = keyword.lower()
+        results = []
+        
+        for student in self.students.values():
+            if search_by == 'name' and keyword_lower in student.name.lower():
+                results.append(student)
+            elif search_by == 'id' and keyword_lower in student.sid.lower():
+                results.append(student)
+            elif search_by == 'major' and keyword_lower in student.major.lower():
+                results.append(student)
+        
+        return results
     def add_student(self):
         """To be implemented by teammate"""
         pass
